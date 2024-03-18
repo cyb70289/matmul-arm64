@@ -67,6 +67,7 @@ static void mm_panel(const float* __restrict a, const float* __restrict b,
 // calculate c by tile
 // - visit a by row panels, b by column panels
 // - reduce memory accesses and total instructions
+// - clang16 vectorizes the code quite good: https://godbolt.org/z/MWvefG6ds
 template <int tile_height = 8, int tile_width = 8,
           bool transpose_a = true, bool transpose_b = true>
 static void mm_tile(const float* __restrict a, const float* __restrict b,

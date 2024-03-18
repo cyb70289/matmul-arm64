@@ -28,12 +28,12 @@ struct {
   const char* name;
   mm_func func;
 } mm_funcs[] {
-  {"baseline",       _mm_baseline     },
-  {"panel",          _mm_panel_24     },
-  {"panel-asm",      _mm_panel_24_asm },
-  {"tile",           _mm_tile_8x8     },
-  {"tile-asm",       _mm_tile_8x8_asm },
-  {"tile-transpose", _mm_tile_8x8_T   },
+  {"baseline",       _mm_baseline    },
+  {"panel",          _mm_panel_24    },
+  {"panel-asm",      _mm_panel_24_asm},
+  {"tile",           _mm_tile_8x8    },
+  {"tile-asm",       _mm_tile_8x8_asm},
+  {"tile-transpose", _mm_tile_8x8_T  },
 };
 const int n_funcs = sizeof(mm_funcs) / sizeof(mm_funcs[0]);
 
@@ -113,7 +113,8 @@ int main(int argc, char* argv[]) {
       // compare against baseline test result
       for (long i = 0; i < static_cast<long>(batch)*m*n; ++i) {
         if (std::fabs(c[i] - t[i]) > FLT_MIN) {
-          std::cerr << "FAILED! " << i << ": " << c[i] << " != " << t[i];
+          std::cerr << "FAILED! [" << i << "]: expect " << t[i] \
+                    << ", get " << c[i] << '\n';
           return 1;
         }
       }

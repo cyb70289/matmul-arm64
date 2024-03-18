@@ -13,16 +13,18 @@ bench-all: mm-bench
 	./mm-bench all
 
 profile: mm-bench
-	perf stat -e L1D_CACHE_REFILL,L1D_CACHE,L2D_CACHE_REFILL,L2D_CACHE \
-          -e BR_MIS_PRED_RETIRED,BR_RETIRED,ASE_SPEC,instructions,cycles \
-          ./mm-bench 2>&1 | sed 's/ \+(.*%)$$//'
+	perf stat \
+	    -e L1D_CACHE_REFILL,L1D_CACHE,L2D_CACHE_REFILL,L2D_CACHE \
+	    -e BR_MIS_PRED_RETIRED,BR_RETIRED,ASE_SPEC,instructions,cycles \
+	    ./mm-bench 2>&1 | sed 's/ \+(.*%)$$//'
 
 profile-all: mm-bench
 	for bm in $$(./mm-bench list); do \
-    perf stat -e L1D_CACHE_REFILL,L1D_CACHE,L2D_CACHE_REFILL,L2D_CACHE \
-              -e BR_MIS_PRED_RETIRED,BR_RETIRED,ASE_SPEC,instructions,cycles \
-              ./mm-bench $${bm} 2>&1 | sed 's/ \+(.*%)$$//'; \
-    done
+	    perf stat \
+	        -e L1D_CACHE_REFILL,L1D_CACHE,L2D_CACHE_REFILL,L2D_CACHE \
+	        -e BR_MIS_PRED_RETIRED,BR_RETIRED,ASE_SPEC,instructions,cycles \
+	        ./mm-bench $${bm} 2>&1 | sed 's/ \+(.*%)$$//'; \
+	done
 
 test: mm-bench
 	./mm-bench test
