@@ -1,6 +1,5 @@
 #include <cstdlib>
 #include <cstring>
-#include <arm_neon.h>
 
 // visit both a and b in rows, cache friendly
 // - c[row] = a[row][0]*b[0] + a[row][1]*b[1] + ... + a[row][k-1]*b[k-1]
@@ -24,35 +23,41 @@ static void mm_baseline(const float* __restrict a, const float* __restrict b,
   }
 }
 
+auto _mm_baseline = mm_baseline;
+
+#ifdef __aarch64__
+
+#include <arm_neon.h>
+
 // calculate c by column panels, re-use b panel in cache
 // - c[0][00~23], c[1][00~23], ...
 // - c[0][24~47], c[1][24,27], ...
-template <int col_blk_size = 24>
+template <int panel_width>
 static void mm_panel(const float* __restrict a, const float* __restrict b,
                      float* __restrict c, int m, int n, int k) {
   // XXX: ignore edge case for now
-  if (n % col_blk_size != 0 && k % 4 == 0) std::abort();
+  if (n % panel_width != 0 && k % 4 == 0) std::abort();
 
-  for (int col = 0; col < n; col += col_blk_size) {
+  for (int col = 0; col < n; col += panel_width) {
     const float* a_ptr = a;
     float* c_ptr = c + col;
     for (int row = 0; row < m; ++row) {
       const float* b_ptr = b + col;
-      float v[col_blk_size]{};
+      float v[panel_width]{};
       for (int i = 0; i < k; i += 4) {
-        for (int j = 0; j < col_blk_size; ++j) {
+        for (int j = 0; j < panel_width; ++j) {
           v[j] += a_ptr[i] * b_ptr[j];
         }
         b_ptr += n;
-        for (int j = 0; j < col_blk_size; ++j) {
+        for (int j = 0; j < panel_width; ++j) {
           v[j] += a_ptr[i+1] * b_ptr[j];
         }
         b_ptr += n;
-        for (int j = 0; j < col_blk_size; ++j) {
+        for (int j = 0; j < panel_width; ++j) {
           v[j] += a_ptr[i+2] * b_ptr[j];
         }
         b_ptr += n;
-        for (int j = 0; j < col_blk_size; ++j) {
+        for (int j = 0; j < panel_width; ++j) {
           v[j] += a_ptr[i+3] * b_ptr[j];
         }
         b_ptr += n;
@@ -68,8 +73,7 @@ static void mm_panel(const float* __restrict a, const float* __restrict b,
 // - visit a by row panels, b by column panels
 // - reduce memory accesses and total instructions
 // - clang16 vectorizes the code quite good: https://godbolt.org/z/MWvefG6ds
-template <int tile_height = 8, int tile_width = 8,
-          bool transpose_a = true, bool transpose_b = true>
+template <int tile_height, int tile_width, bool transpose_a, bool transpose_b>
 static void mm_tile(const float* __restrict a, const float* __restrict b,
                     float* __restrict c, int m, int n, int k) {
   // XXX: ignore edge case for now
@@ -99,7 +103,7 @@ static void mm_tile(const float* __restrict a, const float* __restrict b,
     float* b_tx_ptr = b_tx;
     for (int nn = 0; nn < n; nn += tile_width) {
       const float* b_ptr = b + nn;
-      for (int row = 0; row < k; ++row) { 
+      for (int row = 0; row < k; ++row) {
         std::memcpy(b_tx_ptr, b_ptr + row * n, tile_width * sizeof(float));
         b_tx_ptr += tile_width;
       }
@@ -193,9 +197,10 @@ void mm_panel_24_asm(const float*, const float*, float*, int, int, int);
 void mm_tile_8x8_asm(const float*, const float*, float*, int, int, int);
 }
 
-auto _mm_baseline = mm_baseline;
 auto _mm_panel_24 = mm_panel<24>;
 auto _mm_panel_24_asm = mm_panel_24_asm;
 auto _mm_tile_8x8 = mm_tile<8, 8, false, false>;
 auto _mm_tile_8x8_asm = mm_tile_8x8_asm;
 auto _mm_tile_8x8_T = mm_tile<8, 8, true, true>;
+
+#endif  // __aarch64__

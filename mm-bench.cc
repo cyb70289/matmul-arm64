@@ -18,22 +18,32 @@
 using mm_func = void(*)(const float*, const float*, float*, int, int, int);
 
 extern mm_func _mm_baseline;
+#if defined(__aarch64__)
+// mm.cc
 extern mm_func _mm_panel_24;
-extern mm_func _mm_tile_8x8;
-extern mm_func _mm_tile_8x8_T;
 extern mm_func _mm_panel_24_asm;
+extern mm_func _mm_tile_8x8;
 extern mm_func _mm_tile_8x8_asm;
+extern mm_func _mm_tile_8x8_T;
+#elif defined(__AVX2__)
+// mm-avx2.cc
+extern mm_func _mm_panel_40;
+#endif
 
 struct {
   const char* name;
   mm_func func;
 } mm_funcs[] {
   {"baseline",       _mm_baseline    },
-  {"panel",          _mm_panel_24    },
-  {"panel-asm",      _mm_panel_24_asm},
-  {"tile",           _mm_tile_8x8    },
-  {"tile-asm",       _mm_tile_8x8_asm},
-  {"tile-transpose", _mm_tile_8x8_T  },
+#if defined(__aarch64__)
+  {"panel-24",       _mm_panel_24    },
+  {"panel-24-asm",   _mm_panel_24_asm},
+  {"tile-8x8",       _mm_tile_8x8    },
+  {"tile-8x8-asm",   _mm_tile_8x8_asm},
+  {"tile-8x8-trans", _mm_tile_8x8_T  },
+#elif defined(__AVX2__)
+  {"panel-40",       _mm_panel_40    },
+#endif
 };
 const int n_funcs = sizeof(mm_funcs) / sizeof(mm_funcs[0]);
 
