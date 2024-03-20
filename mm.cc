@@ -141,7 +141,7 @@ static void mm_tile(const float* __restrict a, const float* __restrict b,
       //       |<-- k -->|                                 |<---- n ---->|
       const float* a_ptr = (transpose_a ? a_tx : a) + mm * k;
       const float* b_ptr = transpose_b ? (b_tx + nn * k) : (b + nn);
-      float *c_ptr = c + mm * n + nn;
+      float* c_ptr = c + mm * n + nn;
 
       // calculate tile c
       std::memset(tile_c, 0, sizeof(tile_c));

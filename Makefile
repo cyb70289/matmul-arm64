@@ -41,10 +41,17 @@ ifeq ($(ARCH),x86_64)
 
 PERF_EVENTS = L1D.REPLACEMENT,FP_ARITH_INST_RETIRED.256B_PACKED_SINGLE
 
+# XXX: march=cascadelake to enable ymm16~31
 mm-bench: mm-bench.cc mm.cc mm-avx2.cc
-	$(CXX) -std=c++17 -O3 -mavx2 -mfma $^ -o $@
+	$(CXX) -std=c++17 -O3 -march=cascadelake $^ -o $@
 
 profile: mm-bench
 	perf stat -e $(PERF_EVENTS),instructions,cycles,task-clock ./mm-bench
+
+profile-all: mm-bench
+	for bm in $$(./mm-bench list); do \
+	    perf stat -e $(PERF_EVENTS),instructions,cycles,task-clock \
+	    ./mm-bench $${bm}; \
+	done
 
 endif  # x86_64
