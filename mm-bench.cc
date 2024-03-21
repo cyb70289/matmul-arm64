@@ -28,7 +28,7 @@ extern mm_func _mm_tile_8x8_T;
 #elif defined(__AVX2__)
 // mm-avx2.cc
 extern mm_func _mm_panel_40;
-extern mm_func _mm_panela_8;
+extern mm_func _mm_tile_4x24;
 #endif
 
 struct {
@@ -44,7 +44,7 @@ struct {
   {"tile-8x8-trans", _mm_tile_8x8_T  },
 #elif defined(__AVX2__)
   {"panel-40-avx2",  _mm_panel_40    },
-  {"panela-8-avx2",  _mm_panela_8    },
+  {"tile-4x24-avx2", _mm_tile_4x24   },
 #endif
 };
 const int n_funcs = sizeof(mm_funcs) / sizeof(mm_funcs[0]);
@@ -95,14 +95,14 @@ int main(int argc, char* argv[]) {
   const int batch = 512;
   const int m = 1000, n = 240, k = 200;
 
-  float *a = new float[batch*m*k];
-  float *b = new float[batch*k*n];
-  float *c = new float[batch*m*n];
+  float* a = new float[batch*m*k];
+  float* b = new float[batch*k*n];
+  float* c = new float[batch*m*n];
 
   init_data(a, batch*m*k);
   init_data(b, batch*k*n);
 
-  float *t = nullptr;
+  float* t = nullptr;
   if (verify) {
     std::cout << "calculate baseline result as ground truth\n";
     t = new float[batch*m*n];
