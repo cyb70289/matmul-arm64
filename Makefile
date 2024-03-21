@@ -23,7 +23,7 @@ ifeq ($(ARCH),aarch64)
 PERF_EVENTS = L1D_CACHE_REFILL,L1D_CACHE,ASE_SPEC
 
 mm-bench: mm-bench.cc mm.cc mm-panel.S mm-tile.S
-	$(CXX) -std=c++17 -O3 -march=armv8-a $^ -o $@
+	$(CXX) -Wall -std=c++17 -O3 -march=armv8-a $^ -o $@
 
 profile: mm-bench
 	perf stat -e $(PERF_EVENTS),instructions,cycles,task-clock \
@@ -41,9 +41,8 @@ ifeq ($(ARCH),x86_64)
 
 PERF_EVENTS = L1D.REPLACEMENT,FP_ARITH_INST_RETIRED.256B_PACKED_SINGLE
 
-# XXX: march=cascadelake to enable ymm16~31
 mm-bench: mm-bench.cc mm.cc mm-avx2.cc
-	$(CXX) -std=c++17 -O3 -march=cascadelake $^ -o $@
+	$(CXX) -Wall -std=c++17 -O3 -mavx2 -mfma $^ -o $@
 
 profile: mm-bench
 	perf stat -e $(PERF_EVENTS),instructions,cycles,task-clock ./mm-bench

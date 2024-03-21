@@ -14,7 +14,7 @@ static void mm_panel(const float* __restrict a, const float* __restrict b,
   __m256 cv[panel_width / 8];
   static_assert(sizeof(av) + sizeof(bv) + sizeof(cv) <= 32 * 32);
 
-  // transpose b in panels
+  // transpose b (vector-wise) in panels
   float* bt = new float[k * n];
   {
     float* bt_ptr = bt;
@@ -38,7 +38,7 @@ static void mm_panel(const float* __restrict a, const float* __restrict b,
       for (int kk = 0; kk < k; ++kk) {
         av = _mm256_broadcast_ss(a_ptr);
         std::memcpy(bv, b_ptr, sizeof(bv));
-        for (int i = 0; i < sizeof(cv) / sizeof(cv[0]); ++i) {
+        for (unsigned i = 0; i < sizeof(cv) / sizeof(cv[0]); ++i) {
           cv[i] += av * bv[i];
         }
         ++a_ptr;
@@ -52,6 +52,73 @@ static void mm_panel(const float* __restrict a, const float* __restrict b,
   delete[] bt;
 }
 
+template <int panel_height>
+static void mm_panela(const float* __restrict a, const float* __restrict b,
+                      float* __restrict c, int m, int n, int k) {
+  // XXX: ignore edge case for now
+  if (k % 8 != 0 || n % 8 != 0 || m % panel_height != 0) std::abort();
+
+  // transpose a (element-wise) in panels
+  float* at = new float[m * k];
+  float* at_ptr = at;
+  for (int mm = 0; mm < m; mm += panel_height) {
+    const float* a_ptr = a + mm * k;
+    for (int kk = 0; kk < k; ++kk) {
+      for (int i = 0; i < panel_height; ++i) {
+        *at_ptr++ = a_ptr[i * k + kk];
+      }
+    }
+  }
+
+  // store c with transposed (vector-wise) format in panels
+  float* ct = new float[m * n]{};
+
+  const float* a_ptr = at;
+
+  for (int mm = 0; mm < m; mm += panel_height) {
+    const float* b_ptr = b;
+
+    for (int kk = 0; kk < k; ++kk) {
+      float* c_ptr = ct + mm * n;
+
+      __m256 av[panel_height];
+      for (int h = 0; h < panel_height; ++h) {
+        av[h] = _mm256_broadcast_ss(a_ptr);
+        ++a_ptr;
+      }
+
+      for (int nn = 0; nn < n; nn += 8) {
+        const __m256 bv = _mm256_loadu_ps(b_ptr);
+        b_ptr += 8;
+
+        for (int h = 0; h < panel_height; ++h) {
+          __m256 cv = _mm256_loadu_ps(c_ptr);
+          cv += av[h] * bv;
+          _mm256_storeu_ps(c_ptr, cv);
+          c_ptr += 8;
+        }
+      }
+    }
+  }
+
+  // transpose ct back to c
+  const float* ct_ptr = ct;
+  for (int mm = 0; mm < m; mm += panel_height) {
+    for (int nn = 0; nn < n; nn += 8) {
+      float* c_ptr = c + mm * n + nn;
+      for (int h = 0; h < panel_height; ++h) {
+        std::memcpy(c_ptr + h * n, ct_ptr, 8 * sizeof(float));
+        ct_ptr += 8;
+      }
+    }
+  }
+
+  delete[] at;
+  delete[] ct;
+}
+
+// XXX: bad perfomance, just for reference
+#if 0
 template <int tile_height, int tile_width>
 static void mm_tile(const float* __restrict a, const float* __restrict b,
                     float* __restrict c, int m, int n, int k) {
@@ -141,6 +208,7 @@ static void mm_tile(const float* __restrict a, const float* __restrict b,
   delete[] at;
   delete[] bt;
 }
+#endif
 
 auto _mm_panel_40 = mm_panel<40>;
-auto _mm_tile_8x8 = mm_tile<8, 8>;
+auto _mm_panela_8 = mm_panela<8>;

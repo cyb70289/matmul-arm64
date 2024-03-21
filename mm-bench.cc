@@ -28,7 +28,7 @@ extern mm_func _mm_tile_8x8_T;
 #elif defined(__AVX2__)
 // mm-avx2.cc
 extern mm_func _mm_panel_40;
-extern mm_func _mm_tile_8x8;
+extern mm_func _mm_panela_8;
 #endif
 
 struct {
@@ -44,7 +44,7 @@ struct {
   {"tile-8x8-trans", _mm_tile_8x8_T  },
 #elif defined(__AVX2__)
   {"panel-40-avx2",  _mm_panel_40    },
-  {"tile-8x8-avx2",  _mm_tile_8x8    },
+  {"panela-8-avx2",  _mm_panela_8    },
 #endif
 };
 const int n_funcs = sizeof(mm_funcs) / sizeof(mm_funcs[0]);
