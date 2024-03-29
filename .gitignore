@@ -1,5 +1,2 @@
 mm-bench
-onednn-bench
-blis-bench
-ComputeLibrary/
-onednn/
+mm-bench-ebm
