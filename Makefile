@@ -5,7 +5,7 @@ ARCH := $(shell uname -p)
 .PHONY: clean bench bench-all bench-onednn profile profile-all test
 
 mm-bench: mm-bench.cc mm.cc mm-panel.S mm-tile.S
-	$(CXX) -std=c++17 -O3 -march=armv8-a -static $^ -o $@
+	$(CXX) -std=c++17 -O3 -DNDEBUG -march=armv8-a -static $^ -o $@
 
 bench: mm-bench
 	./mm-bench
