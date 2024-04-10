@@ -31,7 +31,7 @@ test: mm-bench
 	./mm-bench test
 
 clean:
-	rm -f mm-bench onednn-bench blis-bench
+	rm -f mm-bench onednn-bench blis-bench llamafile-bench
 
 #################################### onednn ####################################
 # - build acl (arm only)
@@ -75,3 +75,13 @@ onednn-bench: onednn-bench.cc
 
 bench-onednn: onednn-bench
 	OMP_NUM_THREADS=1 LD_LIBRARY_PATH=$(DNNL_LDLIB_DIR) ./onednn-bench $(B) $(M) $(N) $(K)
+
+################################## llamafile ##################################
+llamafile-bench: llamafile-bench.cc
+	g++ -O3 -std=c++17 $^ -o $@
+
+profile-llamafile: llamafile-bench
+	perf stat \
+        -e L1D_CACHE_REFILL,L1D_CACHE,L2D_CACHE_REFILL,L2D_CACHE \
+        -e BR_MIS_PRED_RETIRED,BR_RETIRED,ASE_SPEC,instructions,cycles \
+        ./llamafile-bench 2>&1 | sed 's/ \+(.*%)$$//'

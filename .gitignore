@@ -1,5 +1,6 @@
 mm-bench
 onednn-bench
 blis-bench
+llamafile-bench
 ComputeLibrary/
 onednn/
